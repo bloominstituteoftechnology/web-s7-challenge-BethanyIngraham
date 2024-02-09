@@ -21,7 +21,7 @@ const formSchema = yup.object().shape({
     .string()
     .oneOf(['S','M','L'], validationErrors.sizeIncorrect)
     .required()
-})
+});
 
 // 👇 This array could help you construct your checkboxes using .map in the JSX.
 const toppings = [
@@ -53,28 +53,30 @@ export default function Form() {
     formSchema.isValid(values).then((isValid) => {
       setIsEnabled(isValid)
     })
-  }, [values])
+  }, [values]);
+
+  const changeToppings = (evt) => {
+    let {name, checked} = evt.target;
+    if(checked){
+      setValues({...values, toppings: [ ...values.toppings, name ]});
+    }else
+      setValues({...values, toppings: [...values.toppings.filter(topping_id => topping_id !== name)]});  
+  }
 
   const onChange = (evt) => {
-    let {id, value, type, checked} = evt.target;
-    type === 'checkbox' ? checked : value; 
-    //if checked -> put into toppoings intital value array via key (name)
-    setValues({...values, [id]: value})
+    let {id, value} = evt.target;
+    setValues({...values, [id]: value});
     yup
     .reach(formSchema, id)
     .validate(value)
     .then(() => {setErrors({...errors, [id]: ''}) })
-    .catch((err) => {setErrors({...errors, [id]: err.errors[0]}) })
-  }
-
+    .catch((err) => {setErrors({...errors, [id]: err.errors[0]}) });
+    } 
+  
   const handleSubmit = (evt) => {
     evt.preventDefault();
-    const {fullName: customer, size, toppings} = values;
     axios
-    .post('http://localhost:9009/api/order', {
-       customer, size, toppings
-    })
-    //is this correct? debugger goes where?
+    .post('http://localhost:9009/api/order', values)
     .then((res) => {
         setSucces(res.data.message)
         setFailure('')   
@@ -119,10 +121,10 @@ export default function Form() {
         {toppings.map((tp, idx) =>
          <label key={idx}>
           <input 
-            name={tp.topping_id} 
+            name={tp.topping_id}
             type='checkbox' 
-            onChange={onChange} 
-            checked={values.tp}
+            onChange={changeToppings} 
+            checked={values.toppings.includes(tp.topping_id)}
           />
          {tp.text}<br/>
         </label>)}    
